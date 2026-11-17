@@ -1,49 +1,48 @@
 # fhir-validator-lite
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/Trysac/u928-fhir-validator-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Trysac/u928-fhir-validator-lite/actions/workflows/ci.yml)
-
-FHIR R4 JSON resource validator driven by StructureDefinition snapshots that checks cardinality, datatypes, choice types and required bindings and emits OperationOutcome
+FHIR R4 JSON resource validator driven by StructureDefinition snapshots that checks cardinality, datatypes, choice types and required bindings and emits OperationOutcome.
 
 ## Problem
 
-Describe in two or three sentences the concrete problem this utility solves, who hits it, and what
-they do today without it. Replace this paragraph when the first real feature lands.
+Integrations that exchange FHIR resources need to reject malformed payloads before storing them. The official HL7 validator is a large Java application with terminology services that is heavy to embed in a service or test suite, while hand-written checks drift from the specification. This library validates FHIR R4 JSON against `StructureDefinition` snapshots given as data, with exact element paths and `OperationOutcome` output.
 
-## Install
+## Installation
 
-Maven coordinates `io.github.trysac:fhir-validator-lite`. Until it is published to Maven Central, build
-it from a release tag with `mvn install`, then declare:
+Add to your `pom.xml`:
 
 ```xml
 <dependency>
   <groupId>io.github.trysac</groupId>
   <artifactId>fhir-validator-lite</artifactId>
-  <version>0.1.0</version>
+  <version>1.0.0</version>
 </dependency>
 ```
-
-Requires Java 21 or newer. No dependencies outside the standard library.
 
 ## Usage
 
 ```java
-import io.github.trysac.fhir_validator_lite.Text;
+import io.github.trysac.fhir_validator_lite.*;
+import java.nio.charset.StandardCharsets;
 
-// normalize trims surrounding whitespace and lower-cases the text.
-String name = Text.normalize("  Hello World "); // "hello world"
-
-// Blank input is rejected explicitly instead of returning an empty string.
-Text.normalize("   "); // throws BlankInputException ("input is blank")
+Validator validator = Validator.load(List.of(patientDefBytes), List.of(genderValueSetBytes));
+byte[] resource = "{\"resourceType\":\"Patient\",\"id\":\"example\",\"gender\":\"female\"}".getBytes(StandardCharsets.UTF_8);
+List<Issue> issues = validator.validate(resource);
+String outcomeJson = Validator.toOperationOutcome(issues);
 ```
 
-## Documentation
+## API Summary
 
-- [Architecture](docs/ARCHITECTURE.md) and [decisions](docs/decisions/)
-- [Testing](docs/TESTING.md) and [security](docs/SECURITY.md)
-- [Project record](docs/PROJECT.md) and [stack](docs/STACK.md)
-- [Changelog](CHANGELOG.md) and [contributing guide](CONTRIBUTING.md)
+- `Validator.load(List<byte[]> structureDefinitions, List<byte[]> valueSetExpansions)`: Initializes the validator with definitions.
+- `Validator.validate(byte[] resourceJson)`: Returns `List<Issue>` with validation findings.
+- `Validator.toOperationOutcome(List<Issue> issues)`: Serializes issues to a standard FHIR `OperationOutcome` JSON.
+- `Issue(String severity, String code, String expression, String diagnostics)`: Immutable validation finding.
+- **Limits**: Rejects inputs > 4 MiB; recursion depth limit 64; strictly enforces RFC 8259 (no duplicate keys, malformed UTF-8, or invalid numbers).
+- **Errors**: `FhirException` (code: `input_too_large`, `too_deep`, `invalid_json`, `unknown_resource_type`, `invalid_definition`).
 
-## License
+## Why not the official HL7 validator?
 
-[MIT](LICENSE) (c) 2026 Miguel Gomez
+This library provides an embeddable, dependency-free subset of the official validator. It does not require a terminology server, heavy classpath dependencies, or local R5 support, making it suitable for lightweight microservices.
+
+## Security
+
+See [docs/SECURITY.md](docs/SECURITY.md) for the threat model and limits.
