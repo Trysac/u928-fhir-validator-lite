@@ -1,25 +1,13 @@
-# Security notes
+# Security
 
-## Threat model
+## Threat Model
 
-`io.github.trysac:fhir-validator-lite` is a pure library without I/O. The main risks are:
+- **Denial of Service (DoS)**: Defended by enforcing a strict 4 MiB input byte limit (`input_too_large` error) and a maximum JSON nesting depth of 64 (`too_deep` error) to prevent stack overflow.
+- **JSON Parser Injection/Desync**: Defended by a custom, strict RFC 8259 parser that rejects duplicate object keys and malformed UTF-8.
+- **Data Leakage**: Defended by truncating all `FhirException` messages to 200 characters; no full resource payloads are echoed in error logs.
+- **Supply Chain Attacks**: Defended by having zero runtime dependencies, relying only on the Java 21 standard library.
 
-- **Supply chain**: a compromised dependency, Maven plugin or CI action. Mitigation: standard
-  library only, every plugin and dependency pinned to an exact version in `pom.xml`, OSV-Scanner
-  over every artifact Maven resolves and over `pom.xml` in the gates, Dependabot weekly updates,
-  actions pinned by commit SHA, minimal workflow permissions.
-- **Leaked secrets**: tokens committed by mistake. Mitigation: `gitleaks` runs in the local gates
-  and in CI; `.env` files are git-ignored.
-- **Insecure code**: command injection, unsafe deserialization, disabled TLS verification.
-  Mitigation: Error Prone and javac `-Xlint:all` with warnings as errors, and the factory's Semgrep
-  rules (`.semgrep/factory-rules.yml`, `nosemgrep` ignored); fix the code instead of silencing it.
-- **Untrusted input**: callers may pass hostile strings. Mitigation: validate input and throw
-  explicit, documented exceptions; never deserialize untrusted bytes with `ObjectInputStream`;
-  never start a shell with untrusted data.
+## Limits
 
-## Publishing
-
-Releases are git tags; publishing to Maven Central needs a namespace account and a signing key,
-which are never stored in the repository.
-
-To report a vulnerability, see [SECURITY.md](../SECURITY.md).
+- The parser rejects inputs exceeding 4,194,304 bytes.
+- Parsing and validation depth is capped at 64 levels.

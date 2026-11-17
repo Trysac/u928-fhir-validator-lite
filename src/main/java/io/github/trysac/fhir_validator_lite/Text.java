@@ -3,7 +3,7 @@ package io.github.trysac.fhir_validator_lite;
 import java.util.Locale;
 import java.util.Objects;
 
-/** Text helpers of this library. */
+/** Text normalization utility retained for backwards compatibility with the template. */
 public final class Text {
 
   private Text() {}
