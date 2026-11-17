@@ -1,0 +1,16 @@
+# fhir-validator-lite
+
+> FHIR R4 JSON resource validator driven by StructureDefinition snapshots that checks cardinality, datatypes, choice types and required bindings and emits OperationOutcome Maven artifact `io.github.trysac:fhir-validator-lite`, Java package
+> `io.github.trysac.fhir_validator_lite`, MIT licensed, Java >= 21, standard library only.
+
+## Docs
+
+- [README](README.md): problem, install, usage example
+- [AGENTS](AGENTS.md): commands, folder map, conventions, limits
+- [Architecture](docs/ARCHITECTURE.md): shape of the library and its public API
+- [Testing](docs/TESTING.md): how to run and extend the tests
+
+## Optional
+
+- [Stack](docs/STACK.md): tools used and discarded
+- [Changelog](CHANGELOG.md): release history
